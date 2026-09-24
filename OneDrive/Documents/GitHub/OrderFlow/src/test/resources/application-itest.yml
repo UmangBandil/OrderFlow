@@ -1,0 +1,22 @@
+spring:
+  flyway:
+    enabled: true
+
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+  data:
+    redis:
+      host: localhost
+      port: 6399
+
+  cache:
+    type: none
+
+app:
+  kafka:
+    enabled: false
+  outbox:
+    poll-interval-ms: 600000
+  jwt:
+    secret: itest-secret-key-for-orderflow-integration-tests-0123456789abcdef

@@ -1,0 +1,143 @@
+spring:
+  application:
+    name: orderflow
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/orderflow}
+    username: ${SPRING_DATASOURCE_USERNAME:orderflow}
+    password: ${SPRING_DATASOURCE_PASSWORD:orderflow_dev_password}
+    hikari:
+      maximum-pool-size: 10
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 2s
+      connect-timeout: 2s
+
+  cache:
+    type: redis
+
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+    consumer:
+      group-id: orderflow-core
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        max.poll.records: 50
+    listener:
+      concurrency: 3
+
+app:
+  jwt:
+    # 32+ chars; override with JWT_SECRET in any real environment
+    secret: ${JWT_SECRET:local-dev-only-secret-key-change-me-in-production!}
+    access-token-validity-minutes: 15
+    refresh-token-validity-days: 7
+
+  cors:
+    allowed-origins: http://localhost:3000
+
+  payment-simulation:
+    failure-rate: ${PAYMENT_SIMULATION_FAILURE_RATE:0.0}
+    timeout-rate: ${PAYMENT_SIMULATION_TIMEOUT_RATE:0.0}
+
+  outbox:
+    poll-interval-ms: 2000
+    batch-size: 50
+
+  rate-limit:
+    login-per-minute: 5
+    order-create-per-minute: 10
+    default-per-minute: 100
+
+orderflow:
+  topics:
+    order-events: order.events
+    payment-events: payment.events
+    inventory-events: inventory.events
+    shipment-events: shipment.events
+    order-events-dlt: order.events.dlt
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+---
+# ============ Seed profile: demo data ============
+spring:
+  config:
+    activate:
+      on-profile: seed
+
+---
+# ============ Test profile: H2 in PostgreSQL mode ============
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:h2:mem:orderflow;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+
+  flyway:
+    enabled: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6399
+
+  cache:
+    type: none
+
+  kafka:
+    listener:
+      auto-startup: false
+    template:
+      observation-enabled: false
+
+app:
+  outbox:
+    poll-interval-ms: 60000

@@ -1,0 +1,138 @@
+{
+  "title": "OrderFlow",
+  "uid": "orderflow-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Order Creation Rate (per minute)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(orderflow_order_created_total[1m])) * 60",
+          "legendFormat": "orders/min"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Payments per Minute",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(orderflow_payment_completed_total[1m])) * 60",
+          "legendFormat": "completed"
+        },
+        {
+          "expr": "sum(rate(orderflow_payment_failed_total[1m])) * 60",
+          "legendFormat": "failed"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Saga Compensations (per minute)",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(orderflow_saga_compensation_total[1m])) * 60",
+          "legendFormat": "compensations"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "API Latency",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_sum[5m])) / sum(rate(http_server_requests_seconds_count[5m]))",
+          "legendFormat": "avg"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Outbox Publisher",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 6, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(orderflow_outbox_published_total[1m])) * 60",
+          "legendFormat": "published/min"
+        },
+        {
+          "expr": "sum(rate(orderflow_outbox_failures_total[1m])) * 60",
+          "legendFormat": "failures/min"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Cache Hit Rate (Redis)",
+      "type": "gauge",
+      "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "green", "value": 0.8 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "orderflow_cache_hit_ratio",
+          "legendFormat": "product cache"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "HTTP Error Rate (%)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count[5m])) * 100",
+          "legendFormat": "5xx %"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\"}[5m])) / sum(rate(http_server_requests_seconds_count[5m])) * 100",
+          "legendFormat": "4xx %"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Notification Emails Sent (per minute)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(orderflow_notification_email_total[1m])) * 60",
+          "legendFormat": "emails/min"
+        }
+      ]
+    }
+  ]
+}
